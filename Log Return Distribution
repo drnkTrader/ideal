@@ -35,7 +35,7 @@ float kurt_s = 0.0f;
 //Calc Log Return
 for (int i = V.Count - mlen; i < V.Count; i++)
 {
-    logReturn[i] = (float)(Math.Round(Math.Log(C[i] / C[i - 1]), mult1));
+    logReturn[i] = (float)(Math.Round(Math.Log(C[i] / C[i - 1]), mult1)*100f);
     //z[i] = i;
 }
 
