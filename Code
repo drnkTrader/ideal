@@ -1,0 +1,71 @@
+int OPT0 = Convert.ToInt32(Sistem.Parametreler[0]);//lookback
+float OPT1 = Convert.ToSingle(Sistem.Parametreler[1]);//b
+float OPT2 = Convert.ToSingle(Sistem.Parametreler[2]);//c
+
+//Sistem Verileri
+var V = Sistem.GrafikVerileri;
+List<float> C = Sistem.GrafikFiyatSec("Kapanis");
+
+int d = OPT0;
+float b = (float)(OPT1 * d);
+float c = (float)(OPT2 * d);
+int a = 1;
+
+float sum = 0f, sum1 = 0f, sum2 = 0f;
+
+//=MAX(MIN(x-a/b-a,1,d-x/d-c),0)
+var z1 = Sistem.Liste(V.Count, 0.0f);
+var z2 = Sistem.Liste(V.Count, 0.0f);
+var z3 = Sistem.Liste(V.Count, 0.0f);
+var z4 = Sistem.Liste(V.Count, 0.0f);
+
+//Calc Weights
+for (int i = a; i <= d; i++)
+{
+    z1[i] = (float)(Math.Max(Math.Min(Math.Min((i - a) / (b - a), (d - i) / (d - c)), 1), 0));
+    float val = z1[i];
+    sum += val;
+    val = 0f;
+}
+
+//Shift to the end
+for (int x = d; x >= 0; x--)
+{
+    z4[Sistem.BarSayisi + x - d - 1] = z1[x];
+}
+
+//Scale Weights
+for (int i = a; i <= d; i++)
+{
+    z2[i] = (float)(z1[i] / sum);
+    float val = z2[i];
+    sum1 += val;
+    val = 0f;
+}
+//Multiply Weigths and Sum
+for (int i = d; i < V.Count; i++)
+{
+    sum2 = 0f;
+    for (int j = a; j <= d; j++)
+    {
+        float val = (float)(C[i - d + j] * z2[j]);
+        sum2 += val;
+        val = 0f;
+    }
+    z3[i] = sum2;
+}
+//Karşılaştırma için
+//var z4 = Sistem.MA(C, "Weighted", d);
+
+Sistem.Cizgiler[0].Deger = z1;
+Sistem.Cizgiler[1].Deger = z3;
+Sistem.Cizgiler[2].Deger = z4;
+
+int px = 15;
+int py1 = 20;
+int py2 = 115;
+
+Sistem.ZeminYazisiEkle("Parameters", 2, px, py1, Color.Gold, "Arial", 9);
+Sistem.ZeminYazisiEkle("Period\t\t: " + OPT0.ToString("0.00"), 2, px, py1 + 20, Color.Gold, "Arial", 9);
+Sistem.ZeminYazisiEkle("1st Weigth\t: " + OPT1.ToString("0.00"), 2, px, py1 + 35, Color.Gold, "Arial", 9);
+Sistem.ZeminYazisiEkle("2nd weight\t: " + OPT2.ToString("0.00"), 2, px, py1 + 50, Color.Gold, "Arial", 9);
