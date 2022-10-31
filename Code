@@ -9,7 +9,7 @@ List<float> C = Sistem.GrafikFiyatSec("Kapanis");
 int d = OPT0;
 float b = (float)(OPT1 * d);
 float c = (float)(OPT2 * d);
-int a = 1;
+int a = 0;
 
 float sum = 0f, sum1 = 0f, sum2 = 0f;
 
@@ -31,7 +31,7 @@ for (int i = a; i <= d; i++)
 //Shift to the end
 for (int x = d; x >= 0; x--)
 {
-    z4[Sistem.BarSayisi + x - d - 1] = z1[x];
+    z4[Sistem.BarSayisi + x - d-1] = z1[x];
 }
 
 //Scale Weights
@@ -57,9 +57,8 @@ for (int i = d; i < V.Count; i++)
 //Karşılaştırma için
 //var z4 = Sistem.MA(C, "Weighted", d);
 
-Sistem.Cizgiler[0].Deger = z1;
-Sistem.Cizgiler[1].Deger = z3;
-Sistem.Cizgiler[2].Deger = z4;
+Sistem.Cizgiler[0].Deger = z3;
+Sistem.Cizgiler[1].Deger = z4;
 
 int px = 15;
 int py1 = 20;
