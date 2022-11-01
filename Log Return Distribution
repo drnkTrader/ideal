@@ -1,7 +1,7 @@
-int OPT0 = Convert.ToInt32(Sistem.Parametreler[0]);//1000
-int OPT1 = Convert.ToInt32(Sistem.Parametreler[1]);//80
-int OPT2 = Convert.ToInt32(Sistem.Parametreler[2]);//
-int OPT3 = Convert.ToInt32(Sistem.Parametreler[3]);//
+int OPT0 = Convert.ToInt32(Sistem.Parametreler[0]);//2200 Günlük grafikte
+int OPT1 = Convert.ToInt32(Sistem.Parametreler[1]);//200
+int OPT2 = Convert.ToInt32(Sistem.Parametreler[2]);//3
+int OPT3 = Convert.ToInt32(Sistem.Parametreler[3]);//1
 
 //Sistem Verileri
 var V = Sistem.GrafikVerileri;
@@ -32,11 +32,15 @@ float std_s = 0.0f;
 float skew_s = 0.0f;
 float kurt_s = 0.0f;
 
+
 //Calc Log Return
-for (int i = V.Count - mlen; i < V.Count; i++)
+for (int i = V.Count - mlen+1; i < V.Count; i++)
 {
-    logReturn[i] = (float)(Math.Round(Math.Log(C[i] / C[i - 1]), mult1)*100f);
+    logReturn[i] = (float)(Math.Round(Math.Log(C[i] / C[i - 1]), mult1))*100f;
     //z[i] = i;
+
+//z2[i+1] = C[i]; 
+
 }
 
 //Log Return Distributions
@@ -152,4 +156,4 @@ Sistem.Cizgiler[0].Deger = zero;
 Sistem.Cizgiler[1].Deger = logReturn;
 Sistem.Cizgiler[2].Deger = dist;
 Sistem.Cizgiler[3].Deger = values;
-//Sistem.Cizgiler[4].Deger = z1;
+Sistem.Cizgiler[4].Deger = z2;
