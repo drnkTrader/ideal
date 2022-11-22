@@ -1,0 +1,42 @@
+//Sistem Sabit Listeler
+var V = Sistem.GrafikVerileri;
+
+var AySonGun = Sistem.Liste(0f);
+
+for (int i = 1; i < Sistem.BarSayisi; i++)
+{
+
+ //31 son gün olan aylar
+ if ((V[i].Date.Month < 8 && V[i].Date.Month % 2 == 1) || (V[i].Date.Month > 7 && V[i].Date.Month % 2 == 0))
+ {
+  if ((V[i].Date.Day == 31) || (V[i].Date.Day > 28 && V[i].Date.DayOfWeek.ToString() == "Friday"))
+   AySonGun[i] = 1;
+ }
+ //30 son gün olan aylar
+ if ((V[i].Date.Month > 2 && V[i].Date.Month < 8 && V[i].Date.Month % 2 == 0) || (V[i].Date.Month > 7 && V[i].Date.Month % 2 == 1))
+ {
+  if ((V[i].Date.Day == 30) || (V[i].Date.Day > 27 && V[i].Date.DayOfWeek.ToString() == "Friday"))
+   AySonGun[i] = 1;
+ }
+
+//28 Gün Şubat
+ if (V[i].Date.Month == 2 && V[i].Date.Year % 4 != 0)
+ {
+  if ((V[i].Date.Day == 28) || (V[i].Date.Day > 25 && V[i].Date.DayOfWeek.ToString() == "Friday"))
+   AySonGun[i] = 1;
+ }
+
+//29 Gün Şubat
+ if (V[i].Date.Month == 2 && V[i].Date.Year % 4 == 0)
+ {
+  if ((V[i].Date.Day == 29) || (V[i].Date.Day > 26 && V[i].Date.DayOfWeek.ToString() == "Friday"))
+   AySonGun[i] = 1;
+ }
+
+ //Manuel Girişler için
+ if (V[i].Date.Month == 10 && V[i].Date.Day == 28 && V[i].Date.Year == 2021) AySonGun[i] = 1;
+}
+
+Sistem.Cizgiler[0].Deger = AySonGun;
+
+
