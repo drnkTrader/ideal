@@ -1,5 +1,6 @@
 # ideal
 Parametreler ve çizgi düzenleri
+
 ![image](https://user-images.githubusercontent.com/116917602/209584021-a2ab6a50-208f-4a46-a752-386608649647.png)
 
 Parametrelerin Açıklaması
@@ -17,4 +18,5 @@ dinamik bir TP ve STOP yapısı nasıl kurgulanabilir göstermek için paylaşı
 
 İyi Çalışmalar Dilerim
 
+![image](https://user-images.githubusercontent.com/116917602/209584393-e5ba956e-5b6d-4f8d-becc-cfbec216df96.png)
 
