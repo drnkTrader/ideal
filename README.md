@@ -14,7 +14,7 @@ OPT5 ve OPT7 TP ve STOP değerlerinin pozisyon açık kaldıkça azalış ve art
 OPT6 ise İzleyen stopun ma2'ye olan uzaklığı gene binde X cinsinden
 
 Bu sistemi kesinlikle canlı kullanım için değil, 
-dinamik bir TP ve STOP yapısı nasıl kurgulanabilir göstermek için paylaşıyorum.
+dinamik bir TP ve STOP yapısı nasıl kurgulanabilir kod örneği olarak göstermek için paylaşıyorum.
 
 İyi Çalışmalar Dilerim
 
