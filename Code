@@ -4,11 +4,12 @@ int OPT0 = Convert.ToInt32(Sistem.Parametreler[0]);
 var V = Sistem.GrafikVerileri;
 var C = Sistem.GrafikFiyatSec("Kapanis");
 var hl2 = Sistem.GrafikFiyatSec("OrtaNokta");
+
 //------------Dominant Cycle Hesaplama-------------
 
 var Price = hl2;
 float alpha = 0.07f;
-var Smooth = Lib.SS3(Sistem,Price,5);
+var Smooth = Lib.SS3(Sistem,Price,3); // Bu kısmı değiştirdim
 var Cycle =Sistem.Liste(0f);
 var InstPeriod =Sistem.Liste(0f);
 var Q1 =Sistem.Liste(0f);
@@ -37,7 +38,7 @@ for (int i = 6; i < Sistem.BarSayisi; i++)
 {
 float DC = MedianDelta[i] == 0 ?  15 : 6.28318f/MedianDelta[i] + 0.5f;
 InstPeriod[i] =0.33f*DC+0.67f*InstPeriod[i-1];
-DominantPeriod[i] = 0.15f*InstPeriod[i]+.085f*DominantPeriod[i-1];
+DominantPeriod[i] = 0.15f*InstPeriod[i]+0.85f*DominantPeriod[i-1];
 }
 
 
