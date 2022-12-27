@@ -1,0 +1,79 @@
+int OPT0 = Convert.ToInt32(Sistem.Parametreler[0]);
+
+//Sistem Verileri
+var V = Sistem.GrafikVerileri;
+var C = Sistem.GrafikFiyatSec("Kapanis");
+var hl2 = Sistem.GrafikFiyatSec("OrtaNokta");
+//------------Dominant Cycle Hesaplama-------------
+
+var Price = hl2;
+float alpha = 0.07f;
+var Smooth = Lib.SS3(Sistem,Price,5);
+var Cycle =Sistem.Liste(0f);
+var InstPeriod =Sistem.Liste(0f);
+var Q1 =Sistem.Liste(0f);
+var DeltaPhase = Sistem.Liste(0f);
+var I1 =Sistem.Liste(0f);
+var DominantPeriod=Sistem.Liste(0f);
+
+
+for (int i = 6; i < Sistem.BarSayisi; i++)
+{
+Cycle[i] = (1-0.5f*alpha)*(1-0.5f*alpha)*(Smooth[i]-2*Smooth[i-1]+Smooth[i-2])+2*(1-alpha)*Cycle[i-1]-(1-alpha)*(1-alpha)*Cycle[i-2];
+
+Q1[i] =(.0962f*Cycle[i]+0.5769f*Cycle[i-2]-0.5769f*Cycle[i-4]-0.0962f*Cycle[i-6])*(0.5f+0.08f*InstPeriod[i-1]);
+I1[i] = Cycle[i-3];
+
+
+DeltaPhase[i] = Q1[i] != 0 && Q1[i-1]!= 0 ? (I1[i]/Q1[i]-I1[i-1]/Q1[i-1])/(1+I1[i]*I1[i-1]/(Q1[i]*Q1[i-1])) : DeltaPhase[i-1];
+DeltaPhase[i] = DeltaPhase[i] < 0.1f ? 0.1f : DeltaPhase[i];
+DeltaPhase[i] = DeltaPhase[i] > 1.1f ? 1.1f : DeltaPhase[i];
+
+}
+
+var MedianDelta = Sistem.Median(DeltaPhase,5);
+
+for (int i = 6; i < Sistem.BarSayisi; i++)
+{
+float DC = MedianDelta[i] == 0 ?  15 : 6.28318f/MedianDelta[i] + 0.5f;
+InstPeriod[i] =0.33f*DC+0.67f*InstPeriod[i-1];
+DominantPeriod[i] = 0.15f*InstPeriod[i]+.085f*DominantPeriod[i-1];
+}
+
+
+
+int len = OPT0;    
+
+//Karşılaştırma için default EMA
+
+var ma1 = Sistem.MA(C,"Exp",len);
+
+
+//Dominant period
+
+float alpha1 = 0f;
+var period = Sistem.Liste(0f);
+
+for (int i = 0; i < Sistem.BarSayisi; i++)
+{
+ period[i] = DominantPeriod[i];
+
+alpha1 = 2f / (period[i] + 1f) ;
+
+}
+
+// Değişken periodlu Ema kodu 
+var ma = Sistem.Liste(0f);
+for (int i = 50; i < Sistem.BarSayisi; i++)
+{
+    ma[i] = alpha1 * C[i] + (1 - alpha1) * ma[i-1] ;
+
+    ma[i] = float.IsNaN(ma[i]) ? ma[i - 1] : ma[i];
+    ma[i] = float.IsInfinity(ma[i]) ? ma[i - 1] : ma[i];
+}
+
+//Cizgiler
+
+Sistem.Cizgiler[0].Deger = DominantPeriod;
+Sistem.Cizgiler[1].Deger = ma1;
+Sistem.Cizgiler[2].Deger = ma;
