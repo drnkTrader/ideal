@@ -8,4 +8,5 @@ maximum bar'dan 1 eksik yaparsanız yeterli olur
 
 Bu kod her barda baştan hesapladığı için, max bar ile OPT0 arasında çok fark olursa çok beklersiniz
 
-kod biraz karışık, idare edin
+kod biraz karışık anlaşılması zor olabilir, 
+istek üzerine paylaştım idare edin
