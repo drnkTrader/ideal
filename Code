@@ -1,0 +1,322 @@
+//Parametreleri al
+int OPT0 = Convert.ToInt32(Sistem.Parametreler[0]);//12
+//float OPT1 = Convert.ToSingle(Sistem.Parametreler[1]);
+//bool OPT2 = Convert.ToBoolean(Sistem.Parametreler[2]);
+
+//Veriler
+var V = Sistem.GrafikVerileri;
+List<float> C = Sistem.GrafikFiyatSec("Acilis");
+List<float> H = Sistem.GrafikFiyatSec("Yuksek");
+List<float> L = Sistem.GrafikFiyatSec("Dusuk"); 
+double pi = Math.Round(Math.PI,6);
+
+// Window the data
+// data[i]=samples[i]*(0.5-0.35*Math.Cos(2*pi*i/N));  // Hanning Window
+// amplitudeFactor=2.0;
+// powerFactor=1.63;
+//data[i]=samples[i]*(0.54-0.46*Math.Cos(2*pi*i/N)); // Hamming Window
+//amplitudeFactor=1.85;
+//powerFactor=1.59;
+//(0.426591 - 0.496561*Math.Cos(2*pi*i/N) +.076848*Math.Cos(4*pi*n/N)); //exact blackman
+//amplitudeFactor=2.80;
+//powerFactor=1.97;
+
+var X = Sistem.Median(C,3);//Sistem.Liste(0f);
+
+for (int i = 1; i < Sistem.BarSayisi; i++)
+{
+		
+  X[i] = Convert.ToSingle(Math.Log(C[i]/C[i-1]));               
+
+}
+
+
+var xs2 = Lib.Decycler(Sistem,C,10);
+var x = Lib.cheb1(Sistem,xs2,200,20,0);
+//var xs = Lib.cheb1(Sistem,x,50,29,1);
+
+var wave1 = Sistem.Liste(0f);
+double amp1=50.0;
+double len1=80;
+double freq1 = 1/(len1);
+double phase1 = 90.0;
+int panel1 = 3;
+Sistem.ZeminYazisiEkle("len1: "+len1.ToString(),panel1,0,15,Color.Gold, "Arial", 9);
+Sistem.ZeminYazisiEkle("amp1: "+amp1.ToString(),panel1,0,30,Color.Gold, "Arial", 9);
+Sistem.ZeminYazisiEkle("phase1: "+phase1.ToString("0.00"),panel1,0,45,Color.Gold, "Arial", 9);
+
+var wave2 = Sistem.Liste(0f);
+double amp2=25.0;
+double len2 = 60;
+double freq2 = 1/(len2);
+double phase2 = 0.0;
+int panel2 = panel1+1;
+Sistem.ZeminYazisiEkle("len2: "+len2.ToString(),panel2,0,15,Color.Gold, "Arial", 9);
+Sistem.ZeminYazisiEkle("amp2: "+amp2.ToString(),panel2,0,30,Color.Gold, "Arial", 9);
+Sistem.ZeminYazisiEkle("phase2: "+phase2.ToString("0.00"),panel2,0,45,Color.Gold, "Arial", 9);
+
+var wave3 = Sistem.Liste(0f);
+double amp3=30.0;
+double len3=40;
+double freq3 = 1/(len3);
+double phase3 = 90.0;
+int panel3 = panel2+1;
+Sistem.ZeminYazisiEkle("len3: "+len3.ToString(),panel3,0,15,Color.Gold, "Arial", 9);
+Sistem.ZeminYazisiEkle("amp3: "+amp3.ToString(),panel3,0,30,Color.Gold, "Arial", 9);
+Sistem.ZeminYazisiEkle("phase3: "+phase3.ToString("0.00"),panel3,0,45,Color.Gold, "Arial", 9);
+
+var wave4 = Sistem.Liste(0f);
+double amp4=45.0;
+double len4=20;
+double freq4 = 1/(len4);
+double phase4 = 45.0;
+int panel4 = panel3+1;
+Sistem.ZeminYazisiEkle("len4: "+len4.ToString(),panel4,0,15,Color.Gold, "Arial", 9);
+Sistem.ZeminYazisiEkle("amp4: "+amp4.ToString(),panel4,0,30,Color.Gold, "Arial", 9);
+Sistem.ZeminYazisiEkle("phase4: "+phase4.ToString("0.00"),panel4,0,45,Color.Gold, "Arial", 9);
+
+//Sistem.ZeminYazisiEkle("Combined wave",3,0,15,Color.Gold, "Arial", 9);
+
+for (int i = 1; i < Sistem.BarSayisi; i++)
+{
+ wave1[i] = (float)(amp1*Math.Sin(2.0*pi*freq1*i + phase1*pi/180.0));
+ wave2[i] = (float)(amp2*Math.Sin(2.0*pi*freq2*i + phase2*pi/180.0));
+ wave3[i] = (float)(amp3*Math.Sin(2.0*pi*freq3*i + phase3*pi/180.0));
+ wave4[i] = (float)(amp4*Math.Sin(2.0*pi*freq4*i + phase4*pi/180.0));
+}
+
+var wave5 = Sistem.Liste(0f);
+for (int i = 1; i < Sistem.BarSayisi; i++)
+{
+ wave5[i] = wave1[i] + wave2[i]+ wave3[i]+ wave4[i];
+}
+
+var wave5w = Sistem.Liste(0f);
+
+for (int i = 1; i < Sistem.BarSayisi; i++)
+{
+ wave5w[i] = (float)(wave5[i]*(0.54-0.46*Math.Cos(2.0*pi*i/5000.0)));
+// X[i] = (float)(X[i]*(0.54-0.46*Math.Cos(2.0*pi*i/10000.0)));
+ wave5w[i] = X[i];
+}
+
+var p0 = Sistem.Liste(0f);
+var th = Sistem.Liste(0f);
+var ord = Sistem.Liste(0f);
+
+var y  = Sistem.Liste(0.0f);
+var z1  = Sistem.Liste(0.0f);
+var z2  = Sistem.Liste(0.0f);
+//float z1 = 0f; //Sistem.Liste(0.0);
+//float z2 = 0f; //Sistem.Liste(0.0);
+var InPhase = Sistem.Liste(0.0);
+var Quadrature = Sistem.Liste(0.0);
+var Power = Sistem.Liste(0.0);
+var Theta = Sistem.Liste(0.0);
+var Mag = Sistem.Liste(0.0);
+
+int len = 10;
+int N = OPT0;
+
+double w = 0;
+// cos of omega (the real portion of omega)
+double w_real = 0;
+// sin of omega (the complex portion of omega)
+double w_imag = 0;
+   
+// Coefficient 2* cos of omega (real part)		
+double c = 0; 
+
+int init = 2;
+int step = 1;
+int last = 500;
+
+for (int j = init; j <= last; j+=step){
+p0[j]=0f;
+len = j;
+
+double k = (double)(N /len);
+
+// Because our signal is a complex signal we have to comput both the real and imaginary
+
+// omega = (2 pi * number of bars in period)/Window length
+w = (double)2.0*pi*k/N;     
+// cos of omega (the real portion of omega)
+w_real = Math.Cos(w);
+// sin of omega (the complex portion of omega)
+w_imag = Math.Sin(w);
+   
+// Coefficient 2* cos of omega (real part)		
+c = 2.0*w_real;    
+
+
+ for (int i = N ; i < Sistem.BarSayisi; i++)
+  {
+   z1[i] = 0f;
+   z2[i] = 0f;
+//y[i]=0f;
+ //Shound this be 0 to N-1???
+ for (int n = 1 ; n <= N-1; n++)
+  {
+   y[i] = (float)(wave5w[i-n] + c*z1[i] - z2[i]);
+   z2[i] = z1[i];
+   z1[i] = y[i];
+  }
+
+// Real
+InPhase[i]  = (float)(z1[i] - z2[i]*w_real);   
+// Imag
+Quadrature[i] = (float)(z2[i]*w_imag);
+//Mag
+Mag[i] = (float)(Math.Sqrt(( Math.Pow(z2[i],2) + Math.Pow(z1[i],2) - (c*z1[i]*z2[i]) ))*1.85*2f/N);
+
+//Power	
+//Power[i]  = Mag[i];
+//Power[i]  =(float)(Math.Pow(z2[i],2) + Math.Pow(z1[i],2) - (c*z1[i]*z2[i]));
+Power[i]  =(float)(1.59*( Math.Pow(z2[i],2) + Math.Pow(z1[i],2) - (c*z1[i]*z2[i]))/N/N);
+//Theta in Radians
+//Theta[i] = (float)( Math.Atan((InPhase[i]/Quadrature[i]))*2.0*pi ) ;
+Theta[i] = (float)( Math.Atan2(Quadrature[i],InPhase[i]) ) ;
+
+
+
+if ( Mag[i] > p0[j] ) 
+{p0[j] = Mag[i];
+th[j] = (float)Theta[i];}
+
+}
+
+}
+
+
+int max0 = 0;
+var max = Sistem.Liste(0f);
+
+for (int u = 2 ; u < last ; u++)
+{
+//find max
+ if (p0[u-2] <= p0[u-1] && p0[u-1] > p0[u] && p0[u-1] > p0[max0])
+  {
+   max0 = u-1;
+  }
+
+}
+
+int v=1;
+//store 90% of max
+for (int u = 2 ; u < last ; u++)
+{
+ if (p0[u-2] <= p0[u-1] && p0[u-1] > p0[u] && p0[u-1] > p0[max0]*0.5f)
+ {max[v] = u-1;v++;}
+
+}
+
+Sistem.ZeminYazisiEkle("maxP :" + max0.ToString(),2,0,15,Color.Gold, "Arial", 9);
+//Sistem.ZeminYazisiEkle("max1 :" + max[1].ToString(),2,0,30,Color.Gold, "Arial", 9);
+//Sistem.ZeminYazisiEkle("max2 :" + max[2].ToString(),2,0,45,Color.Gold, "Arial", 9);
+//Sistem.ZeminYazisiEkle("max3 :" + max[3].ToString(),2,0,60,Color.Gold, "Arial", 9);
+//Sistem.ZeminYazisiEkle("max4 :" + max[4].ToString(),2,0,75,Color.Gold, "Arial", 9);
+
+//Sistem.ZeminYazisiEkle("p.max1 :" + p0[max1].ToString(),2,100,15,Color.Gold, "Arial", 9);
+//Sistem.ZeminYazisiEkle("p.max2 :" + p0[max2].ToString(),2,100,30,Color.Gold, "Arial", 9);
+//Sistem.ZeminYazisiEkle("p.max3 :" + p0[max3].ToString(),2,100,45,Color.Gold, "Arial", 9);
+//Sistem.ZeminYazisiEkle("p.max4 :" + p0[max4].ToString(),2,100,60,Color.Gold, "Arial", 9);
+//Sistem.ZeminYazisiEkle("p.max5 :" + p0[max5].ToString(),2,100,75,Color.Gold, "Arial", 9);
+
+
+var xx = 30;
+var yx = 150 ;
+//Reverse the List for visual representation with old index
+for (int i1 = 1;i1 <= last; i1++)
+{
+
+int loc=V.Count-last+i1-50;
+
+p0[loc] = p0[i1];///p0[max0]; 
+ord[loc] = i1/last;
+th[loc] = th[i1];
+
+Sistem.YaziEkle(i1.ToString(),2,loc,0,Color.Gold, "Arial", 8);
+
+}
+
+
+var wave13 = Sistem.Liste(0f);
+double amp13=p0[40];
+double len13=40;
+double freq13 = 1/(len13);
+double phase13 = th[40];
+int panel13 = 5;
+Sistem.ZeminYazisiEkle("len13: "+len13.ToString("0"),panel13,100,15,Color.Gold, "Arial", 9);
+Sistem.ZeminYazisiEkle("amp13: "+amp13.ToString(".00"),panel13,100,30,Color.Gold, "Arial", 9);
+Sistem.ZeminYazisiEkle("phase13: "+phase13.ToString("0.00"),panel13,100,45,Color.Gold, "Arial", 9);
+
+var wave14 = Sistem.Liste(0f);
+double amp14=p0[20];
+double len14=20;
+double freq14 = 1/(len14);
+double phase14 = th[20];
+int panel14 = 6;
+Sistem.ZeminYazisiEkle("len14: "+len14.ToString("0"),panel14,100,15,Color.Gold, "Arial", 9);
+Sistem.ZeminYazisiEkle("amp14: "+amp14.ToString(".00"),panel14,100,30,Color.Gold, "Arial", 9);
+Sistem.ZeminYazisiEkle("phase14: "+phase14.ToString("0.00"),panel14,100,45,Color.Gold, "Arial", 9);
+
+//Sistem.ZeminYazisiEkle("Combined wave",3,0,15,Color.Gold, "Arial", 9);
+
+for (int i = 1; i < Sistem.BarSayisi; i++)
+{
+ wave14[i] = (float)(amp14*Math.Sin(2.0*pi*freq14*i + phase14*pi/180.0));
+ //wave2[i] = (float)(amp2*Math.Sin(2.0*pi*freq2*i + phase2*pi/180.0));
+ wave13[i] = (float)(amp13*Math.Sin(2.0*pi*freq13*i + phase13*pi/180.0));
+ //wave4[i] = (float)(amp4*Math.Sin(2.0*pi*freq4*i + phase4*pi/180.0));
+}
+
+
+//Hesaplanan verileri çizgilere aktar ve açiklama ekle
+Sistem.Cizgiler[0].Deger = wave1;
+Sistem.Cizgiler[0].Aciklama = "wave1";
+Sistem.Cizgiler[0].Renk = Color.Lime;
+Sistem.Cizgiler[0].Panel = panel1;
+
+Sistem.Cizgiler[1].Deger = wave2;
+Sistem.Cizgiler[1].Aciklama = "wave2";
+Sistem.Cizgiler[1].Renk = Color.Yellow;
+Sistem.Cizgiler[1].Panel = panel2;
+
+Sistem.Cizgiler[2].Deger = wave3;
+Sistem.Cizgiler[2].Aciklama = "wave3";
+Sistem.Cizgiler[2].Renk = Color.Red;
+Sistem.Cizgiler[2].Panel = panel3;
+
+Sistem.Cizgiler[3].Deger = wave5;
+Sistem.Cizgiler[3].Aciklama = "wave5";
+Sistem.Cizgiler[3].Renk = Color.White;
+
+Sistem.Cizgiler[4].Deger = p0;
+Sistem.Cizgiler[4].Aciklama = "p0";
+Sistem.Cizgiler[4].Renk = Color.White;
+
+Sistem.Cizgiler[5].Deger = ord;
+Sistem.Cizgiler[5].Aciklama = "order";
+Sistem.Cizgiler[5].Renk = Color.Yellow;
+
+Sistem.Cizgiler[6].Deger = wave4;
+Sistem.Cizgiler[6].Aciklama = "wave4";
+Sistem.Cizgiler[6].Renk = Color.Gray;
+Sistem.Cizgiler[6].Panel = panel4;
+
+Sistem.Cizgiler[7].Deger = X;
+Sistem.Cizgiler[7].Aciklama = "X";
+Sistem.Cizgiler[7].Renk = Color.Gray;
+
+Sistem.Cizgiler[8].Deger = wave14;
+Sistem.Cizgiler[8].Aciklama = "wave14";
+Sistem.Cizgiler[8].Renk = Color.Yellow;
+
+Sistem.Cizgiler[9].Deger = th;
+Sistem.Cizgiler[9].Aciklama = "th";
+Sistem.Cizgiler[9].Renk = Color.Gray;
+
+Sistem.Cizgiler[10].Deger = wave13;
+Sistem.Cizgiler[10].Aciklama = "wave13";
+Sistem.Cizgiler[10].Renk = Color.Yellow;
