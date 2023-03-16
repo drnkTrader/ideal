@@ -1,0 +1,245 @@
+
+//Parameters
+int OPT0 = Convert.ToInt32(Sistem.Parametreler[0]);//ma1 period
+int OPT1 = Convert.ToInt32(Sistem.Parametreler[1]);//ma2 period
+int OPT2 = Convert.ToInt32(Sistem.Parametreler[2]);//
+float OPT3 = Convert.ToSingle(Sistem.Parametreler[3]);//Stop başlangıç uzaklığı binde 
+float OPT4 = Convert.ToSingle(Sistem.Parametreler[4]);//TP başlangıç uzaklığı binde
+float OPT5 = Convert.ToSingle(Sistem.Parametreler[5]);//TP Yaklaşma hızı binde
+float OPT6 = Convert.ToSingle(Sistem.Parametreler[6]);//TR uzaklık miktarı binde
+float OPT7 = Convert.ToSingle(Sistem.Parametreler[7]);//STOP yaklaşma hızı binde
+float OPT8 = Convert.ToSingle(Sistem.Parametreler[8]);//STOP yaklaşma hızı binde
+
+//Sistem Sabit Listeler
+var V = Sistem.GrafikVerileri;
+var O = Sistem.GrafikFiyatSec("Acilis");
+var C = Sistem.GrafikFiyatSec("Kapanis");
+var H = Sistem.GrafikFiyatSec("Yuksek");
+var L = Sistem.GrafikFiyatSec("Dusuk");
+
+//Strateji Listeleri
+
+var xs = Sistem.MA(C,"Simple", 5);
+
+var ma1 = Sistem.MA(C,"Simple", OPT0);
+var ma2 = Sistem.MA(C,"Simple", OPT1);
+
+//-----------STRATEJI--------------------
+//Yon bilgisi resetle
+for (int i = 1; i < Sistem.BarSayisi; i++) Sistem.Yon[i] = "";
+
+var SonYon = "";
+var tpSet = Sistem.Liste(V.Count, 0f);
+var trSet = Sistem.Liste(V.Count, 0f);
+var stpSet = Sistem.Liste(V.Count, 0f);
+float SonFiyat = 0f;
+float CikisFiyat = 0f;
+bool trail = false;
+
+int tp = 0;
+int tr = 0;
+int stp = 0;
+int exit = 0;
+
+var exitList = Sistem.Liste(V.Count, 0f);
+var tpList = Sistem.Liste(V.Count, 0f);
+var trList = Sistem.Liste(V.Count, 0f);
+var stpList = Sistem.Liste(V.Count, 0f);
+
+var db = Sistem.Liste(V.Count, 0f);
+var db1List = Sistem.Liste(V.Count, 0f);
+var db2List = Sistem.Liste(V.Count, 0f);
+
+for (int i = 100; i < Sistem.BarSayisi; i++)
+{
+	var Sinyal = "";
+	int AlToplam = 0;
+	int SatToplam = 0;
+
+	int AFlatToplam = 0;
+	int SFlatToplam = 0;
+
+	bool alis = false;
+	bool satis = false;
+	bool alisF = false;
+	bool satisF = false;
+
+float tpStep = OPT5/1000;
+float trStep = OPT6/1000;
+float stpStep = OPT7/1000;
+
+if( ( xs[i] > CikisFiyat*(1+(OPT8/1000f)) || xs[i] < CikisFiyat*(1-(OPT8/1000f)) ) && ( SonYon == "F" || SonYon == "") ) {db[i] = 1f;} 
+
+db1List[i] = CikisFiyat*(1+(OPT8/1000f));
+db2List[i] = CikisFiyat*(1-(OPT8/1000f));
+
+
+if( SonYon == "A" || SonYon == "S" ) {db[i] = 0f;db1List[i] = 0f;db2List[i] = 0f;} 
+
+//Stop , TP ve TRAIL STOP değişim oranları
+
+if (SonYon == "A") tpSet[i] = tpSet[i-1]-tpStep;
+if (SonYon == "S") tpSet[i] = tpSet[i-1]+tpStep;
+if (SonYon == "A") stpSet[i] = stpSet[i-1]+stpStep;
+if (SonYon == "S") stpSet[i] = stpSet[i-1]-stpStep;
+trStep = C[i]*(OPT5/1000);
+
+//Trail şartları ve hesaplamaları
+if (SonYon == "A" && H[i] >= tpSet[i]) {trail =true;tpSet[i] = Math.Max(Math.Max( C[i],tpSet[i]),tpSet[i-1]);}
+if (SonYon == "S" && L[i] <= tpSet[i]) {trail =true;tpSet[i] = Math.Min(Math.Min( C[i],tpSet[i]),tpSet[i-1]);}
+
+if (trail && SonYon == "A") { trSet[i] = Math.Max( Math.Max( SonFiyat, ma2[i] - trStep),trSet[i-1]) ; }
+if (trail && SonYon == "S") { trSet[i] = Math.Min( Math.Min( SonFiyat, ma2[i] + trStep),trSet[i-1]) ; }
+
+
+	//strateji kararlar, sadece alış, strateji satış vs..
+	alis = true
+        && db[i] == 1
+	&& ma1[i] > ma2[i]
+	&& ma1[i-1] <= ma2[i-1]
+	;
+
+	satis = false
+        && db[i] == 1
+	&& ma1[i] < ma2[i]
+	&& ma1[i-1] >= ma2[i-1]
+	;
+
+	alisF = false
+	&& ma1[i] < ma2[i]
+	;
+
+	satisF = false
+	&& ma1[i] > ma2[i]
+	;
+
+	//Strateji ile isleme giris
+	if (alis   && (SonYon != "A" || SonYon == "")) { AlToplam = 1;  } // Mevcut işlemi kes yeni işleme gir alternatifi (SonYon == "F") mevcut işlem yoksa
+	if (satis  && (SonYon != "S" || SonYon == "")) { SatToplam = 1; } // Mevcut işlemi kes yeni işleme gir alternatifi (SonYon == "F") mevcut işlem yoksa
+        //Strateji ile islemden cikis
+	if (alisF  && SonYon == "A" ) { AFlatToplam = 10; }
+	if (satisF && SonYon == "S" ) { SFlatToplam = 10; }
+
+	//Kar Al ile islemden cikma
+	if (trail && C[i] < trSet[i] && SonYon == "A") { AFlatToplam = 20; }
+	if (trail && C[i] > trSet[i] && SonYon == "S") { SFlatToplam = 20; }
+
+	//Stop ile islemden cikma
+	if (C[i] < stpSet[i] && SonYon == "A") { AFlatToplam = 30; }
+	if (C[i] > stpSet[i] && SonYon == "S") { SFlatToplam = 30; }
+
+	//Stratejiden islem Sinyalini üret
+	if (AlToplam == 1) { Sinyal = "A"; SonFiyat = C[i]; }
+	if (SatToplam == 1) { Sinyal = "S"; SonFiyat = C[i]; }
+
+ if (AFlatToplam > 0 || SFlatToplam > 0 ) { CikisFiyat = xs[i]; }
+
+	//Alistan Flate Sinyal üret
+	if (AFlatToplam == 10) { Sinyal = "F"; Sistem.YaziEkle("X", 1, i, V[i].Low, Color.Gold, "Arial", 9); exit++; }
+	if (AFlatToplam == 20) { Sinyal = "F"; Sistem.YaziEkle("TP", 1, i, V[i].Low, Color.Gold, "Arial", 9); tr++; }
+	if (AFlatToplam == 30) { Sinyal = "F"; Sistem.YaziEkle("S", 1, i, V[i].Low, Color.Gold, "Arial", 9); stp++; }
+
+	//Satistan Flate Sinyal üret
+	if (SFlatToplam == 10) { Sinyal = "F"; Sistem.YaziEkle("X", 1, i, V[i].High, Color.Gold, "Arial", 9); exit++; }
+	if (SFlatToplam == 20) { Sinyal = "F"; Sistem.YaziEkle("X", 1, i, V[i].High, Color.Gold, "Arial", 9); tr++; }
+	if (SFlatToplam == 30) { Sinyal = "F"; Sistem.YaziEkle("S", 1, i, V[i].High, Color.Gold, "Arial", 9); stp++; }
+
+	//İslem sayilarını cizdirmek icin
+	trList[i] = tr;
+	stpList[i] = stp;
+	exitList[i] = exit;
+
+	//Sistem Yön Sablonu
+	if (Sinyal != "" && Sinyal != SonYon)
+	{
+		Sistem.Yon[i] = Sinyal;
+		SonYon = Sistem.Yon[i];
+	}
+
+	// Gelen Sinyale göre Seviyeleri hesapla
+	if (Sinyal == "A" && SonYon == "A")
+	{
+		tpSet[i] = SonFiyat * (1 + OPT3 / 1000);
+		stpSet[i] = SonFiyat * (1 - OPT4 / 1000);
+                trSet[i] = SonFiyat;
+	}
+
+	if (Sinyal == "S" && SonYon == "S")
+	{
+		tpSet[i] = SonFiyat * (1 - OPT3 / 1000);
+		stpSet[i] = SonFiyat * (1 + OPT4 / 1000);
+                trSet[i] = SonFiyat ;
+	}
+
+	if (Sinyal == "F" && SonYon== "F") { stpSet[i] = 0f; tpSet[i] = 0f; trSet[i] = 0f; trail = false;}
+
+}
+
+//------------
+
+Sistem.ZeminYazisiEkle("TR : " + tr.ToString("0"), 1, 150, 60, Color.Gold, "Arial", 9);
+Sistem.ZeminYazisiEkle("Stop : " + stp.ToString("0"), 1, 150, 75, Color.Gold, "Arial", 9);
+Sistem.ZeminYazisiEkle("Exit : " + exit.ToString("0"), 1, 150, 90, Color.Gold, "Arial", 9);
+
+Sistem.Cizgiler[0].Deger = ma1;
+Sistem.Cizgiler[0].Aciklama = "MA1";
+Sistem.Cizgiler[0].Panel = 1;
+
+Sistem.Cizgiler[1].Deger = ma2;
+Sistem.Cizgiler[1].Aciklama = "MA2";
+Sistem.Cizgiler[1].Panel = 1;
+
+Sistem.Cizgiler[2].Deger = tpSet;
+Sistem.Cizgiler[2].Aciklama = "TP Set";
+Sistem.Cizgiler[2].Panel = 1;
+
+Sistem.Cizgiler[3].Deger = stpSet;
+Sistem.Cizgiler[3].Aciklama = "STOP Set";
+Sistem.Cizgiler[3].Panel = 1;
+
+Sistem.Cizgiler[4].Deger = trSet;
+Sistem.Cizgiler[4].Aciklama = "TRAIL STOP Set";
+Sistem.Cizgiler[4].Panel = 1;
+
+Sistem.Cizgiler[5].Deger = db1List;
+Sistem.Cizgiler[5].Aciklama = "Band up";
+Sistem.Cizgiler[5].Panel = 1;
+
+Sistem.Cizgiler[6].Deger = db2List;
+Sistem.Cizgiler[6].Aciklama = "Band dn";
+Sistem.Cizgiler[6].Panel = 1;
+
+
+string StartDate = "01/01/2000";
+string FinishDate = "01/01/2100";
+int cizgi1=48;
+int cizgi2=49;
+int panel=2;
+   Sistem.GetiriHesapla(StartDate, 0f);
+   var xg = 1;
+   var yg = -25;
+
+   Sistem.ZeminYazisiEkle("ToplamIslem : " + Sistem.GetiriToplamIslem.ToString(), panel, xg, yg + 40, Color.Gold, "Arial", 9);
+   Sistem.ZeminYazisiEkle("KarIslemOran : " + Sistem.GetiriKarIslemOran.ToString("0.00"), panel, xg, yg + 55, Color.Gold, "Arial", 9);
+   //Sistem.ZeminYazisiEkle("KarMiktar : " + Sistem.GetiriKarMiktar.ToString("0.00"), panel, xg, yg + 70, Color.Gold, "Arial", 9);
+   //Sistem.ZeminYazisiEkle("ZararMiktar : -" + Sistem.GetiriZararMiktar.ToString("0.00"), panel, xg, yg + 85, Color.Gold, "Arial", 9);
+   Sistem.ZeminYazisiEkle("ProfitFactor : " + Sistem.ProfitFactor.ToString("0.00"), panel, xg, yg + 100, Color.Gold, "Arial", 9);
+   Sistem.ZeminYazisiEkle("GetiriNetKar : " + Sistem.GetiriNetKar.ToString("0.00"), panel, xg, yg + 115, Color.Lime, "Arial", 9);
+   Sistem.GetiriMaxDDHesapla(StartDate, FinishDate);
+   Sistem.ZeminYazisiEkle("MaxDD : " + Sistem.GetiriMaxDD.ToString("0.00"), panel, xg, yg + 130, Color.Red, "Arial", 9);
+   //Sistem.ZeminYazisiEkle("Bar Sayısı : " + Sistem.BarSayisi.ToString("0"), panel, xg, yg + 145, Color.Gold, "Arial", 9);
+
+   Sistem.Cizgiler[cizgi1].Deger = Sistem.GetiriKZGunBasi;//GetiriKZGunBasi;
+   Sistem.Cizgiler[cizgi1].Aciklama = "KZGunSonu";
+   Sistem.Cizgiler[cizgi1].Renk = Color.Gray;
+   Sistem.Cizgiler[cizgi1].Panel = panel;
+   Sistem.Cizgiler[cizgi1].ActiveBool = true;
+
+
+   Sistem.Cizgiler[cizgi2].Deger = Sistem.GetiriKZGunSonu;
+   Sistem.Cizgiler[cizgi2].Aciklama = "KZGunSonu";
+   Sistem.Cizgiler[cizgi2].Renk = Color.White;
+   Sistem.Cizgiler[cizgi2].Panel = panel;
+   Sistem.Cizgiler[cizgi2].ActiveBool = true;
+
+   Sistem.DolguEkle(cizgi2, cizgi1, Color.FromArgb(90, 0, 255, 0), Color.FromArgb(90, 255, 0, 0));
