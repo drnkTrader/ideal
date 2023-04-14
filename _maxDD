@@ -1,0 +1,86 @@
+var V = Sistem.GrafikVerileri;
+var C = Sistem.GrafikFiyatSec("Kapanis");
+var H = Sistem.GrafikFiyatSec("Yuksek");
+var L = Sistem.GrafikFiyatSec("Dusuk");
+var HL2 = Sistem.GrafikFiyatSec("OrtaNokta");
+
+var kzMax = Sistem.Liste(0);
+var perKZ = Sistem.Liste(0);
+var perMax = Sistem.Liste(0);
+var maxDD1 = Sistem.Liste(0);
+var maxDD2 = Sistem.Liste(0);
+
+var MA1 = Sistem.MA(HL2,"Exp",30);
+var MA2 = Sistem.MA(HL2,"Exp",200);
+
+//Yon bilgisi resetle
+for (int i = 1; i < Sistem.BarSayisi; i++) Sistem.Yon[i] = "";
+
+float SonFiyat = 0f;
+float ilkFiyat = 0f;
+bool ilkpoz = false;
+var SonYon = "";
+var OncekiYon = "";
+var BarNo = 0;
+var Sinyal = "";
+
+
+
+for (int i = 100; i < V.Count; i++)
+{
+
+if ( MA1[i] > MA2[i] && MA1[i-1] <= MA2[i-1] ) Sinyal = "A";
+//if ( MA1[i] < MA2[i] && MA1[i] >= MA2[i]) Sinyal = "S";
+
+if ( SonYon == "A" && MA1[i] < MA2[i] && MA1[i-1] >= MA2[i-1] ) Sinyal = "F";
+//if ( SonYon == "S" && MA1[i] > MA2[i] && MA1[i] <= MA2[i] ) Sinyal = "F";
+
+ //Strateji islem sinyalini üret
+ if (Sinyal == "A") { SonFiyat = C[i]; }
+// if (Sinyal == "S") { SonFiyat = C[i]; }
+
+if (Sinyal != SonYon && Sinyal != "")
+{
+SonYon = Sinyal;
+Sistem.Yon[i] = SonYon;
+}
+
+ //ilk islemin fiyatinin hesaplanmasi
+ if (ilkpoz == false && (SonYon == "A" || SonYon == "S"))
+ { ilkFiyat = SonFiyat; ilkpoz = true; }
+
+}
+
+
+ Sistem.GetiriHesapla("01/01/2000", 0.0f);
+
+var kz = Sistem.GetiriKZ;
+float yuzdeKar = (float)Sistem.GetiriNetKar / ilkFiyat / 0.01f;
+Sistem.ZeminYazisiEkle("Toplam Kar : " + yuzdeKar.ToString("0") + "%", 2, 1, 45, Color.Gold, "Arial", 9);
+Sistem.ZeminYazisiEkle("Toplam Bar : " + Sistem.BarSayisi.ToString("0,000") + " bar", 2, 1, 60, Color.Gold, "Arial", 9);
+
+for (int i = 100; i < V.Count; i++)
+{
+
+perKZ[i] = (kz[i] / ilkFiyat)*100f;
+
+if(perKZ[i] > perMax[i-1]) perMax[i] = perKZ[i];
+else perMax[i] = perMax[i-1];
+
+maxDD2[i] = 100f*(1f-(perKZ[i]/perMax[i]));
+
+if(kz[i] > kzMax[i-1]) kzMax[i] = kz[i];
+else kzMax[i] = kzMax[i-1];
+
+maxDD1[i] = kzMax[i] - kz[i] ;
+
+}
+
+Sistem.Cizgiler[0].Deger = MA1;
+Sistem.Cizgiler[1].Deger = MA2;
+Sistem.Cizgiler[2].Deger = kz;
+Sistem.Cizgiler[3].Deger = kzMax;
+Sistem.Cizgiler[4].Deger = maxDD1;
+Sistem.Cizgiler[5].Deger = perKZ;
+Sistem.Cizgiler[6].Deger = perMax;
+Sistem.Cizgiler[7].Deger = maxDD2;
