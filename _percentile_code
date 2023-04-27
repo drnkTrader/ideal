@@ -1,0 +1,55 @@
+int OPT0 = Convert.ToInt32(Sistem.Parametreler[0]);//200
+float OPT1 = Convert.ToSingle(Sistem.Parametreler[1]);//80
+float OPT2 = Convert.ToSingle(Sistem.Parametreler[2]);//20
+
+var X = Sistem.Liste(0f);
+var XW = Sistem.Liste(0f);
+
+//Burda istediğiniz oscillatörü istediğiniz ayarlarda kullanabilirsiniz
+X = Sistem.AwesomeOsc(15,60);
+
+// geçmiş örnekleme bar sayısı
+int k = OPT0;
+
+// Listeleri tanımla
+var results1 = Sistem.Liste(0f);
+var results2 = Sistem.Liste(0f);
+var mid = Sistem.Liste(0f);
+
+// Döngüleri hesapla
+for (int i = k*2; i < Sistem.BarSayisi; i++)
+{
+    // Geçmiş örnekleme için
+   XW = X.GetRange(i-k,k );
+
+    // Örnekleme dizisini sırala
+    XW.Sort();
+
+    // istenilen yüzdelik index'i bul
+    float percentile1 = OPT1;
+    int index1 = (int)Math.Ceiling((k * percentile1 / 100f) - 0.5f);
+
+    float percentile2 = OPT2;
+    int index2 = (int)Math.Ceiling((k * percentile2 / 100f) - 0.5f);
+
+    // Bulunan indexteki değeri kaydet
+    float result1 = XW[index1];
+    float result2 = XW[index2];
+
+    // değeri liste elemanına ata
+    results1[i] = result1;
+    results2[i] = result2;
+    mid[i] = (result1+result2)/2f;
+}
+
+Sistem.Cizgiler[0].Deger  = X;
+Sistem.Cizgiler[0].Aciklama  = "OSC";
+Sistem.Cizgiler[1].Deger  = results1;
+Sistem.Cizgiler[1].Aciklama  = "Upper";
+Sistem.Cizgiler[2].Deger  = results2;
+Sistem.Cizgiler[2].Aciklama  = "Lower";
+Sistem.Cizgiler[3].Deger  = mid;
+Sistem.Cizgiler[3].Aciklama  = "Mid";
+
+Sistem.DolguEkle(0,1, Color.FromArgb(50,0 ,255, 0), Color.FromArgb(50, 0, 0, 0));
+Sistem.DolguEkle(0,2, Color.FromArgb(0,0 ,0, 0), Color.FromArgb(50, 255, 0, 0));
